@@ -205,7 +205,7 @@ void tpm_crb_reset(TPMCRBState *s, uint64_t baseaddr)
     regs[R_CRB_CTRL_RSP_LADDR] = (uint32_t)baseaddr;
     regs[R_CRB_CTRL_RSP_HADDR] = (uint32_t)(baseaddr >> 32);
 
-    s->be_buffer_size = MIN(tpm_backend_get_buffer_size(s->tpmbe),
+    s->be_buffer_size = MAX(tpm_backend_get_buffer_size(s->tpmbe),
                             CRB_CTRL_CMD_SIZE);
 
     if (tpm_backend_startup_tpm(s->tpmbe, s->be_buffer_size) < 0) {
