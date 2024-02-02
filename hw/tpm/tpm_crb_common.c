@@ -15,8 +15,8 @@
  */
 
 #include "qemu/osdep.h"
-
 #include "qemu/module.h"
+#include "qemu/error-report.h"
 #include "qapi/error.h"
 #include "exec/address-spaces.h"
 #include "hw/qdev-properties.h"
@@ -218,8 +218,12 @@ void tpm_crb_reset(TPMCRBState *s, uint64_t baseaddr)
 
 void tpm_crb_init_memory(Object *obj, TPMCRBState *s, Error **errp)
 {
-    memory_region_init_rom_device_nomigrate(&s->mmio, obj, &tpm_crb_memory_ops,
-        s, "tpm-crb-mem", TPM_CRB_ADDR_SIZE, errp);
+    info_report("tpm_crb_init_memory: qemu_host_page_size = 0x%lx", qemu_host_page_size);
+
+    memory_region_init_rom_device_nomigrate(&s->mmio, obj, &tpm_crb_memory_ops, s,
+        "tpm-crb-mem", TPM_CRB_ADDR_SIZE, errp);
+//      Initial code due to TPM CRB protocol, windows does not crash but memory range is invalid
+//        "tpm-crb-mem", ROUND_UP(TPM_CRB_ADDR_SIZE, qemu_host_page_size), errp);
     if (s->ppi_enabled) {
         tpm_ppi_init_memory(&s->ppi, obj);
     }
@@ -246,6 +250,9 @@ void tpm_crb_build_aml(TPMIf *ti, Aml *scope, uint32_t baseaddr, uint32_t size,
                        bool build_ppi)
 {
     Aml *dev, *crs;
+
+    info_report("tpm_crb_build_aml: baseaddr = 0x%x", baseaddr);
+    info_report("tpm_crb_build_aml: size = 0x%x", size);
 
     dev = aml_device("TPM");
     aml_append(dev, aml_name_decl("_HID", aml_string("MSFT0101")));
